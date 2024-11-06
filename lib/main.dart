@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_app_flutter/task_creatation_box.dart';
+import 'package:todo_app_flutter/todo_task_widget.dart';
 
 void main() => runApp(const MyApp());
 
@@ -35,6 +37,15 @@ class _MyAppState extends State<MyApp> {
     prefs.setStringList("todo_task_list", _todoTasks);
   }
 
+  _createTask() {
+    setState(() {
+      _todoTasks.add("${_inputTaskController.text}, 0");
+      _todoTasksFlags.add(false);
+      _inputTaskController.clear();
+      _save();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,77 +75,43 @@ class _MyAppState extends State<MyApp> {
           padding: const EdgeInsets.all(10),
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(5),
-                child: Card(
-                  elevation: 5,
-                  child: ListTile(
-                    title: TextField(
-                      controller: _inputTaskController,
-                      decoration: const InputDecoration.collapsed(
-                          hintText: "TODO TASK"),
-                    ),
-                    trailing: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _todoTasks.add("${_inputTaskController.text}, 0");
-                          _todoTasksFlags.add(false);
-                          _inputTaskController.clear();
-                          _save();
-                        });
-                      },
-                      icon: const Icon(Icons.create_rounded),
-                    ),
-                  ),
-                ),
+              TaskCreatationBox(
+                inputTaskController: _inputTaskController,
+                creationCallback: _createTask,
               ),
               Expanded(
                 child: ListView.builder(
                   itemCount: _todoTasks.length,
                   itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 5, right: 5, top: 2),
-                      child: Card(
-                        elevation: 3,
-                        child: ListTile(
-                          leading: Checkbox(
-                            value: _todoTasksFlags[index],
-                            onChanged: (value) {
-                              setState(() {
-                                _todoTasksFlags[index] = value!;
-                                _todoTasks[index] = _todoTasks[index]
-                                    .replaceFirst(RegExp(r'0|1'),
-                                        (value == true) ? '1' : '0');
-                                _save();
-                              });
-                            },
-                          ),
-                          title: Text(
-                            _todoTasks[index].split(", ")[0],
-                            style: (_todoTasks[index].split(", ")[1] == "1")
-                                ? const TextStyle(
-                                    fontStyle: FontStyle.italic,
-                                    decoration: TextDecoration.lineThrough,
-                                  )
-                                : const TextStyle(
-                                    fontStyle: FontStyle.normal,
-                                    decoration: TextDecoration.none,
-                                  ),
-                          ),
-                          trailing: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _todoTasks.removeAt(index);
-                                _todoTasksFlags.removeAt(index);
-                                _save();
-                              });
-                            },
-                            icon: const Icon(
-                              Icons.close,
-                            ),
-                          ),
-                        ),
+                    return TodoTaskWidget(
+                      task: Text(
+                        _todoTasks[index].split(", ")[0],
+                        style: (_todoTasks[index].split(", ")[1] == "1")
+                            ? const TextStyle(
+                                fontStyle: FontStyle.italic,
+                                decoration: TextDecoration.lineThrough,
+                              )
+                            : const TextStyle(
+                                fontStyle: FontStyle.normal,
+                                decoration: TextDecoration.none,
+                              ),
                       ),
+                      isDone: _todoTasksFlags[index],
+                      onMarkDone: (value) {
+                        setState(() {
+                          _todoTasksFlags[index] = value!;
+                          _todoTasks[index] = _todoTasks[index].replaceFirst(
+                              RegExp(r'0|1'), (value == true) ? '1' : '0');
+                          _save();
+                        });
+                      },
+                      onPressRemove: () {
+                        setState(() {
+                          _todoTasks.removeAt(index);
+                          _todoTasksFlags.removeAt(index);
+                          _save();
+                        });
+                      },
                     );
                   },
                 ),
